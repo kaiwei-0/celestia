@@ -12,6 +12,7 @@ pub const CHACHA_ELF: &[u8] = include_bytes!(
 
 use chacha20::ChaCha20;
 use chacha20::cipher::{KeyIvInit, StreamCipher};
+use serde::{Deserialize, Serialize};
 
 pub const KEY_LEN: usize = 32;
 pub const HASH_LEN: usize = 32;
@@ -30,6 +31,13 @@ pub const HEADER_LEN: usize = HASH_LEN + NONCE_LEN + HASH_LEN;
 pub fn chacha(key: &[u8; KEY_LEN], nonce: &[u8; NONCE_LEN], buffer: &mut [u8]) {
     let mut cipher = ChaCha20::new(key.into(), nonce.into());
     cipher.apply_keystream(buffer);
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ZkvmInput {
+    pub key: [u8; KEY_LEN],
+    pub nonce: [u8; NONCE_LEN],
+    pub plaintext: Vec<u8>,
 }
 
 #[cfg(feature = "std")]

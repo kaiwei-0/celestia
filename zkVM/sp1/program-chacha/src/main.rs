@@ -1,26 +1,31 @@
 #![no_main]
-sp1_zkvm::entrypoint!(main);
+pico_sdk::entrypoint!(main);
+use pico_sdk::io::{commit_bytes, read_as, read_vec};
 
 use sha2::{Digest, Sha256};
 
-use zkvm_common::{NONCE_LEN, chacha};
+use zkvm_common::{NONCE_LEN, chacha, ZkvmInput};
 
 pub fn main() {
-    let key = sp1_zkvm::io::read_vec(); // 32 bytes
-    let nonce = sp1_zkvm::io::read_vec(); // 12 bytes
+    let zkvm_inputs: ZkvmInput = read_as();
+    // let key = read_vec(); // 32 bytes
+    // let nonce = read_vec(); // 12 bytes
     // The plaintext to be encrypted _in place_
-    let mut buffer = sp1_zkvm::io::read_vec(); // ~1M bytes
+    // let mut buffer = read_vec(); // ~1M bytes
+    let key = zkvm_inputs.key;
+    let nonce = zkvm_inputs.nonce;
+    let mut buffer = zkvm_inputs.plaintext;
 
     // Commit to key used, providing a fixed UID as first bytes in proof data.
     // So now we have a tag we can look for in filtering DA data latter.
     let key_hash = Sha256::digest(key.as_slice());
-    sp1_zkvm::io::commit_slice(&key_hash); // 32 bytes
+    commit_bytes(&key_hash); // 32 bytes
 
     // Commit to nonce used, this is safe so long as we NEVER reuse a nonce!
     // NOTE: without reading nonce in the next line, it is optimized out or unread = zeros
     // So for a few cycles we ensure it's not dropped also enforce it's the right length
     let nonce: [u8; NONCE_LEN] = nonce.try_into().expect("nonce=12B");
-    sp1_zkvm::io::commit_slice(&nonce);
+    commit_bytes(&nonce);
 
     // Commit to buffer (plaintext) hash
     //
@@ -33,11 +38,11 @@ pub fn main() {
     // so we choose to use SHA2, for slightly higher on chain verification gas costs.
     let plaintext_hash = Sha256::digest(buffer.as_slice());
     // Hash plaintext & commit
-    sp1_zkvm::io::commit_slice(&plaintext_hash); // 32 bytes
+    commit_bytes(&plaintext_hash); // 32 bytes
 
     // Encrypt and commit
     // Incorrect sized buffers passed in are unacceptable, and thus panic.
     chacha(&key.try_into().expect("key=32B"), &nonce, &mut buffer);
 
-    sp1_zkvm::io::commit_slice(&buffer); // ~1M bytes
+    commit_bytes(&buffer); // ~1M bytes
 }

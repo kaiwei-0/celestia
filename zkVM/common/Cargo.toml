@@ -9,6 +9,7 @@ rand = { workspace = true, default-features = false, optional = true, features =
   "os_rng",
 ] }
 sha2 = { workspace = true, optional = true }
+serde = { version = "1.0.219", features = ["derive"] }
 
 [features]
 default = ["std"]
