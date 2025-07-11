@@ -1,3 +1,4 @@
+use std::fs::File;
 use clap::Parser;
 use hex::FromHex;
 use sha2::{Digest, Sha256};
@@ -29,6 +30,37 @@ struct Args {
 
     #[clap(long, default_value = "20")]
     n: u32,
+
+    #[clap(long, value_name = "FILE")]
+    save_inputs: Option<std::path::PathBuf>,
+    #[clap(long, value_name = "FILE")]
+    load_inputs: Option<std::path::PathBuf>,
+}
+
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+struct ZkvmInput {
+    key: [u8; KEY_LEN],
+    nonce: [u8; NONCE_LEN],
+    plaintext: Vec<u8>,
+}
+
+pub fn save_inputs_bin(
+    path: &std::path::Path,
+    key: [u8; KEY_LEN],
+    nonce: [u8; NONCE_LEN],
+    plaintext: &[u8],
+) -> bincode::Result<()> {
+    let input = ZkvmInput { key, nonce, plaintext: plaintext.to_vec() };
+    let mut f = File::create(path)?;
+    bincode::serialize_into(&mut f, &input)?;
+    Ok(())
+}
+
+pub fn load_inputs_bin(path: &std::path::Path) -> bincode::Result<ZkvmInput> {
+    bincode::deserialize_from(File::open(path)?)
 }
 
 fn main() {
@@ -50,23 +82,56 @@ fn main() {
     // - nonce = 12 bytes (MUST BE UNIQUE - NO REUSE!)
     // - input_plaintext = bytes to encrypt
 
-    let input_key = <[u8; KEY_LEN]>::from_hex(
-        std::env::var("ENCRYPTION_KEY").expect("Missing ENCRYPTION_KEY env var"),
-    )
-    .unwrap_or_else(|_| {
-        panic!(
-            "ENCRYPTION_KEY must be {} bytes, hex encoded (ex: `1234...abcd`)",
-            KEY_LEN
+    // let input_key = <[u8; KEY_LEN]>::from_hex(
+    //     std::env::var("ENCRYPTION_KEY").expect("Missing ENCRYPTION_KEY env var"),
+    // )
+    // .unwrap_or_else(|_| {
+    //     panic!(
+    //         "ENCRYPTION_KEY must be {} bytes, hex encoded (ex: `1234...abcd`)",
+    //         KEY_LEN
+    //     )
+    // });
+    // stdin.write_slice(&input_key);
+    // 
+    // let input_nonce: [u8; NONCE_LEN] = zkvm_common::random_nonce();
+    // stdin.write_slice(&input_nonce);
+    // 
+    // // TODO: replace example bytes with service interface
+    // const INPUT_BYTES: &[u8] = include_bytes!("../../../static/proof_input_example.bin");
+    // stdin.write_slice(INPUT_BYTES);
+
+    let (input_key, input_nonce, plaintext_vec, mut stdin) = if let Some(ref path) = args.load_inputs {
+        let inp = load_inputs_bin(path).unwrap();
+        let mut st = SP1Stdin::new();
+        st.write_slice(&inp.key);
+        st.write_slice(&inp.nonce);
+        st.write_slice(&inp.plaintext);
+        (inp.key, inp.nonce, inp.plaintext, st)
+    } else {
+        let key = <[u8; KEY_LEN]>::from_hex(
+            std::env::var("ENCRYPTION_KEY").expect("Missing ENCRYPTION_KEY env var"),
         )
-    });
-    stdin.write_slice(&input_key);
+            .unwrap_or_else(|_| {
+                panic!(
+                    "ENCRYPTION_KEY must be {} bytes, hex encoded (ex: `1234...abcd`)",
+                    KEY_LEN
+                )
+            });
 
-    let input_nonce: [u8; NONCE_LEN] = zkvm_common::random_nonce();
-    stdin.write_slice(&input_nonce);
+        let nonce: [u8; NONCE_LEN] = zkvm_common::random_nonce();
+        const PLAINTEXT: &[u8] = include_bytes!("../../../static/proof_input_example.bin");
 
-    // TODO: replace example bytes with service interface
-    const INPUT_BYTES: &[u8] = include_bytes!("../../../static/proof_input_example.bin");
-    stdin.write_slice(INPUT_BYTES);
+        let mut st = SP1Stdin::new();
+        st.write_slice(&key);
+        st.write_slice(&nonce);
+        st.write_slice(PLAINTEXT);
+
+        if let Some(ref path) = args.save_inputs {
+            save_inputs_bin(path, key, nonce, PLAINTEXT).unwrap();
+            println!("✔️  inputs saved to {}", path.display());
+        }
+        (key, nonce, PLAINTEXT.to_vec(), st)
+    };
 
     let client = ProverClient::from_env();
     if args.execute {
@@ -82,7 +147,7 @@ fn main() {
             ZkvmOutput::from_bytes(output_buffer.as_slice()).expect("Failed to parse header");
 
         // Check against the input
-        let input_plaintext_digest = Sha256::digest(INPUT_BYTES);
+        let input_plaintext_digest = Sha256::digest(&plaintext_vec);
         println!(
             "Input -> plaintext hash: 0x{}",
             zkvm_common::std_only::bytes_to_hex(&input_plaintext_digest)
@@ -95,7 +160,7 @@ fn main() {
         let mut output_plaintext = output.ciphertext.to_owned();
         chacha(&input_key, &output.nonce, &mut output_plaintext);
 
-        assert_eq!(output_plaintext, INPUT_BYTES);
+        assert_eq!(output_plaintext, plaintext_vec);
         println!("Decryption of zkVM ciphertext matches input!");
         let input_key_hash = Sha256::digest(input_key);
         assert_eq!(input_key_hash.as_slice(), output.privkey_hash);

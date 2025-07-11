@@ -5346,9 +5346,11 @@ dependencies = [
 name = "sp1-util"
 version = "0.2.1"
 dependencies = [
+ "bincode",
  "clap",
  "dotenv",
  "hex",
+ "serde",
  "sha2 0.10.8",
  "sp1-build",
  "sp1-sdk",
