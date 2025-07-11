@@ -76,29 +76,10 @@ fn main() {
         std::process::exit(1);
     }
 
-    let mut stdin = SP1Stdin::new();
     // Setup the inputs:
     // - key = 32 bytes
     // - nonce = 12 bytes (MUST BE UNIQUE - NO REUSE!)
     // - input_plaintext = bytes to encrypt
-
-    // let input_key = <[u8; KEY_LEN]>::from_hex(
-    //     std::env::var("ENCRYPTION_KEY").expect("Missing ENCRYPTION_KEY env var"),
-    // )
-    // .unwrap_or_else(|_| {
-    //     panic!(
-    //         "ENCRYPTION_KEY must be {} bytes, hex encoded (ex: `1234...abcd`)",
-    //         KEY_LEN
-    //     )
-    // });
-    // stdin.write_slice(&input_key);
-    // 
-    // let input_nonce: [u8; NONCE_LEN] = zkvm_common::random_nonce();
-    // stdin.write_slice(&input_nonce);
-    // 
-    // // TODO: replace example bytes with service interface
-    // const INPUT_BYTES: &[u8] = include_bytes!("../../../static/proof_input_example.bin");
-    // stdin.write_slice(INPUT_BYTES);
 
     let (input_key, input_nonce, plaintext_vec, mut stdin) = if let Some(ref path) = args.load_inputs {
         let inp = load_inputs_bin(path).unwrap();
