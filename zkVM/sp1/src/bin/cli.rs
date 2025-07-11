@@ -41,10 +41,10 @@ struct Args {
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-struct ZkvmInput {
-    key: [u8; KEY_LEN],
-    nonce: [u8; NONCE_LEN],
-    plaintext: Vec<u8>,
+pub struct ZkvmInput {
+    pub key: [u8; KEY_LEN],
+    pub nonce: [u8; NONCE_LEN],
+    pub plaintext: Vec<u8>,
 }
 
 pub fn save_inputs_bin(
