@@ -22,7 +22,7 @@ export SPLIT_THRESHOLD=1048576
 export RUST_LOG=info
 export RUSTFLAGS="-C target-cpu=native -C target-feature=+avx512f,+avx512ifma,+avx512vl"
 # JEMALLOC may not work properly on aws
-# export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
+export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
 export VK_VERIFICATION=false
 
 RUNS=1

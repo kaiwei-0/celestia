@@ -172,6 +172,6 @@ fn main() {
         let start = Instant::now();
         let proof = client.prove(stdin).expect("Failed to generate proof");
         assert!(client.verify(&proof).is_ok());
-        println!("Prove duration: {:?}", start.elapsed());
+        println!("Proving duration: {:?}", start.elapsed());
     }
 }
