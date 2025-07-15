@@ -7,14 +7,11 @@ use sha2::{Digest, Sha256};
 use zkvm_common::{NONCE_LEN, chacha, ZkvmInput};
 
 pub fn main() {
-    let zkvm_inputs: ZkvmInput = read_as();
-    // let key = read_vec(); // 32 bytes
-    // let nonce = read_vec(); // 12 bytes
+    let key = read_vec(); // 32 bytes
+    let nonce = read_vec(); // 12 bytes
     // The plaintext to be encrypted _in place_
-    // let mut buffer = read_vec(); // ~1M bytes
-    let key = zkvm_inputs.key;
-    let nonce = zkvm_inputs.nonce;
-    let mut buffer = zkvm_inputs.plaintext;
+    let mut buffer = read_vec(); // ~1M bytes
+
 
     // Commit to key used, providing a fixed UID as first bytes in proof data.
     // So now we have a tag we can look for in filtering DA data latter.
