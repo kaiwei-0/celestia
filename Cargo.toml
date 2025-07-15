@@ -1,5 +1,5 @@
 [workspace]
-members = ["service", "zkVM/common", "zkVM/sp1", "zkVM/sp1/program-chacha"]
+members = ["service", "zkVM/common", "zkVM/pico", "zkVM/pico/program-chacha"]
 default-members = ["service"]
 resolver = "3"
 
