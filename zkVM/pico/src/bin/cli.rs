@@ -4,6 +4,7 @@ use pico_sdk::{client::DefaultProverClient, init_logger};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::File;
+use std::time::Instant;
 use std::{env, fs};
 use zkvm_common::{KEY_LEN, NONCE_LEN, chacha, std_only::ZkvmOutput};
 
@@ -160,11 +161,17 @@ fn main() {
         // Set up groth16 verifier and generate pico proof
         // The first parameter `need_setup = true` ensures the Groth16 verifier is set up,
         // but this setup is required only once.
-        let need_setup = true;
+        let groth16_setup = true;
         client
-            .prove_evm(stdin, need_setup, output_path.clone(), "kb")
+            .prove_evm(stdin.clone(), groth16_setup, output_path.clone(), "kb")
             .expect("Failed to generate evm proof");
 
-        println!("Successfully generated proof!");
+        println!("Successfully generated groth16 proof!");
+
+        println!("Generating proof: RISC-V phase -> embed phase");
+        let start = Instant::now();
+        let proof = client.prove(stdin).expect("Failed to generate proof");
+        assert!(client.verify(&proof).is_ok());
+        println!("Prove duration: {:?}", start.elapsed());
     }
 }
