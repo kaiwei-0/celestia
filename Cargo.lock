@@ -6126,6 +6126,7 @@ dependencies = [
  "clap",
  "dotenv",
  "hex",
+ "pico-sdk",
  "serde",
  "sha2 0.10.8",
  "sp1-build",

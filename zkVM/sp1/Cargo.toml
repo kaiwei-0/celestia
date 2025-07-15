@@ -15,6 +15,7 @@ path = "src/bin/vkey.rs"
 [dependencies]
 clap.workspace = true
 sp1-sdk.workspace = true
+pico-sdk = { workspace = true }
 hex.workspace = true
 sha2.workspace = true
 dotenv.workspace = true
