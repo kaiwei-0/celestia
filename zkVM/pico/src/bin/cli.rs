@@ -155,6 +155,8 @@ fn main() {
         let current_dir = env::current_dir().expect("Failed to get current directory");
         let output_path = current_dir.join("./test_data");
 
+        fs::create_dir_all(&output_path).expect("Failed to create output directory");
+
         // Set up groth16 verifier and generate pico proof
         // The first parameter `need_setup = true` ensures the Groth16 verifier is set up,
         // but this setup is required only once.
