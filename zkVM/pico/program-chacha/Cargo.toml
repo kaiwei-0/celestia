@@ -5,7 +5,6 @@ edition.workspace = true
 
 [dependencies]
 sha2.workspace = true
-#sp1-zkvm.workspace = true
 
 zkvm-common.workspace = true
 pico-sdk.workspace = true
